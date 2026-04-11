@@ -17,6 +17,7 @@
     let currentUrl = window.location.href;
     let isAdFound = false;
     let adLoop = 0;
+    let wasMuted = false;
 
     const event = new PointerEvent('click', {
         pointerId: 1,
@@ -100,64 +101,80 @@
             }
 
             if (ad) {
-                isAdFound = true;
-                adLoop = adLoop + 1;
+                if (!isAdFound) {
+                    isAdFound = true;
+                    if (video) {
+                        wasMuted = video.muted;
+                        videoPlayback = video.playbackRate;
+                    }
+                }
+                adLoop++;
 
-                const openAdCenterButton = document.querySelector('.ytp-ad-button-icon');
-                openAdCenterButton?.dispatchEvent(event);
+                log("Found Ad, executing instant skip...");
 
-                const blockAdButton = document.querySelector('[label="Block ad"]');
-                blockAdButton?.dispatchEvent(event);
+                // 1. กดปุ่มข้ามทันที (ถ้าโผล่มา)
+                const skipButtons = [
+                    '.ytp-ad-skip-button-container',
+                    '.ytp-ad-skip-button-modern',
+                    '.videoAdUiSkipButton',
+                    '.ytp-ad-skip-button',
+                    '.ytp-ad-skip-button-slot',
+                    '.ytp-skip-ad-button',
+                    'button.ytp-ad-skip-button'
+                ];
 
-                const blockAdButtonConfirm = document.querySelector('.Eddif [label="CONTINUE"] button');
-                blockAdButtonConfirm?.dispatchEvent(event);
+                skipButtons.forEach(selector => {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements && elements.length > 0) {
+                        elements.forEach(element => {
+                            element.click();
+                            element?.dispatchEvent(event);
+                        });
+                    }
+                });
 
-                const closeAdCenterButton = document.querySelector('.zBmRhe-Bz112c');
-                closeAdCenterButton?.dispatchEvent(event);
-
-                var popupContainer = document.querySelector('body > ytd-app > ytd-popup-container > tp-yt-paper-dialog');
-                if (popupContainer)
-                    if (popupContainer.style.display == "")
-                        popupContainer.style.display = 'none';
-
-                log("Found Ad");
-
-                const skipButtons = ['ytp-ad-skip-button-container', 'ytp-ad-skip-button-modern', '.videoAdUiSkipButton', '.ytp-ad-skip-button', '.ytp-ad-skip-button-modern', '.ytp-ad-skip-button', '.ytp-ad-skip-button-slot'];
-
+                // 2. ถ้าข้ามไม่ได้ (Unskippable Ad) ให้เร่งความเร็วและ Seek ไปตอนจบ
                 if (video) {
+                    video.muted = true; // ปิดเสียงโฆษณา
+                    video.playbackRate = 16.0; // เร่ง X16 วิดีโอโฆษณา
 
-                    skipButtons.forEach(selector => {
-                        const elements = document.querySelectorAll(selector);
-
-                        if (elements && elements.length > 0) {
-                            elements.forEach(element => {
-                                element?.dispatchEvent(event);
-                            });
-                        }
-                    });
+                    // ข้ามไปช่วงใกล้จบ (0.1 วินาทีสุดท้าย) เพื่อให้ Player รันสคริปต์จบปกติ
+                    if (!isNaN(video.duration) && video.currentTime < video.duration - 0.1) {
+                        video.currentTime = video.duration - 0.1;
+                    }
                     video.play();
-
-                    let randomNumber = Math.random() * (0.5 - 0.1) + 0.1;
-                    video.currentTime = video.duration + randomNumber || 0;
                 }
 
-                log("skipped Ad (✔️)");
+                // 3. ปิด Pop-up ที่อาจบังหน้าจอ
+                var popupContainer = document.querySelector('body > ytd-app > ytd-popup-container > tp-yt-paper-dialog');
+                if (popupContainer && popupContainer.style.display !== 'none') {
+                    popupContainer.style.display = 'none';
+                }
+
+                log("Skipped Ad INSTANTLY (✔️)");
 
             } else {
-
-                if (video && video?.playbackRate == 10) {
-                    video.playbackRate = videoPlayback;
-                }
-
+                // กรณีไม่ใช่โฆษณา หรือโฆษณาข้ามเสร็จแล้ว
                 if (isAdFound) {
                     isAdFound = false;
-
-                    if (videoPlayback == 10) videoPlayback = 1;
-                    if (video && isFinite(videoPlayback)) video.playbackRate = videoPlayback;
-
                     adLoop = 0;
+
+                    if (video) {
+                        // คืนค่าความเร็วปกติ
+                        if (isFinite(videoPlayback) && videoPlayback !== 16) {
+                            video.playbackRate = videoPlayback;
+                        } else {
+                            video.playbackRate = 1;
+                        }
+                        
+                        // คืนค่าเสียงเดิมของผู้ใช้
+                        video.muted = wasMuted;
+                    }
                 } else {
-                    if (video) videoPlayback = video.playbackRate;
+                    // อัปเดตค่าความเร็วผู้ใช้อยู่เสมอตอนดูคลิปปกติ
+                    if (video && video.playbackRate !== 16) {
+                        videoPlayback = video.playbackRate;
+                    }
                 }
             }
 
