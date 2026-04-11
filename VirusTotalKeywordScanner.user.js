@@ -10,10 +10,6 @@
 
 (function() {
     'use strict';
-
-    // -----------------------------------------------------------------
-    // ฐานข้อมูลมัลแวร์ (Malware Database)
-    // -----------------------------------------------------------------
     const malwareDb = {
         'PYTHON': 'Scripting Language: มักถูกใช้รันโค้ดอันตรายผ่าน Packer เช่น PyInstaller เพื่อหลบเลี่ยงการสแกนแบบ Static',
         'EXPIRO': 'File Infector: ไวรัสอันตรายที่แพร่กระจายโดยการเกาะไฟล์ .EXE และขโมยข้อมูลผู้ใช้ส่งกลับไปยัง C2',
@@ -44,18 +40,38 @@
         'QAKBOT': 'Banking Trojan: มักแฝงมากับไฟล์เอกสารในอีเมล เพื่อขโมยข้อมูลการเงินในองค์กร',
         'INJECTOR': 'Malware Component: โค้ดที่ใช้ฉีดมัลแวร์เข้าไปในโปรเซสที่ปลอดภัยเพื่อพรางตัว',
         'SHELLCODE': 'Exploit Payload: ชุดคำสั่งขนาดเล็กที่รันในหน่วยความจำเพื่อเริ่มการโจมตีระบบ',
-        'DROPPER': 'Loader: มัลแวร์เริ่มต้นที่ทำหน้าที่ดาวน์โหลดและติดตั้งมัลแวร์ตัวจริงลงในเครื่อง'
+        'DROPPER': 'Loader: มัลแวร์เริ่มต้นที่ทำหน้าที่ดาวน์โหลดและติดตั้งมัลแวร์ตัวจริงลงในเครื่อง',
+        'DLLINJECT': 'Injection Technique: เทคนิคการฉีดโค้ดอันตรายเข้าไปใน Process ที่ทำงานอยู่เพื่อขโมยข้อมูลหรือพรางตัว',
+        'HOOKING': 'Malware Technique: การดักจับการทำงานของ API ของระบบปฏิบัติการเพื่อแก้ไขข้อมูลหรืออ่านค่าคีย์บอร์ด',
+        'ROOTKIT': 'Persistence: ซอฟต์แวร์ที่ออกแบบมาเพื่อซ่อนการมีอยู่ของมัลแวร์จากระบบปฏิบัติการและโปรแกรม Antivirus',
+        'KEYLOGGER': 'Spyware: ฟังก์ชันดักจับทุกการกดคีย์บอร์ดเพื่อขโมยรหัสผ่านและข้อความสนทนา',
+        'STAGER': 'Payload Loader: โค้ดส่วนแรกที่แฮ็กเกอร์ส่งมาเพื่อเตรียมสภาวะแวดล้อมก่อนดาวน์โหลดมัลแวร์หลัก',
+        'CRYPTER': 'Obfuscation: ซอฟต์แวร์ที่ใช้เข้ารหัสไฟล์มัลแวร์เพื่อหลบเลี่ยงการตรวจจับแบบ Signature-based',
+        'ANTI-VM': 'Evasion: โค้ดที่ตรวจสอบว่ากำลังรันอยู่ในระบบจำลอง (Sandbox) หรือไม่ หากใช่ จะไม่ทำงานเพื่อเลี่ยงการวิเคราะห์',
+        'POWERSHELL': 'Living-off-the-land: ใช้เครื่องมือ Windows ในการโจมตี (Fileless Malware) เพื่อเลี่ยงการเขียนไฟล์ลง Disk',
+        'WMI': 'Persistence: การใช้ Windows Management Instrumentation เพื่อรันมัลแวร์โดยไม่ทิ้งร่องรอยใน Registry ปกติ',
+        'EXPLOIT': 'Vulnerability: โค้ดที่ใช้โจมตีช่องโหว่ของซอฟต์แวร์เพื่อยกระดับสิทธิ์ (Privilege Escalation)',
+        'SPYWARE': 'Data Theft: มัลแวร์ที่เน้นการสอดแนม ขโมยภาพหน้าจอ, ไมโครโฟน และไฟล์ข้อมูลส่วนตัว',
+        'RANSOM': 'Encryption: รูปแบบพฤติกรรมการเข้ารหัสไฟล์เพื่อเรียกค่าไถ่',
+        'PHISHING': 'Social Engineering: การหลอกลวงให้ผู้ใช้กรอกข้อมูลสำคัญผ่านการปลอมแปลงหน้าเว็บหรืออีเมล',
+        'TROJAN': 'Malware: โปรแกรมที่แฝงตัวเป็นซอฟต์แวร์ปกติ แต่แอบทำงานอันตรายอยู่ด้านหลัง',
+        'BACKDOOR': 'Persistence: เปิดช่องทางพิเศษให้แฮ็กเกอร์สามารถแอบเข้ามาควบคุมเครื่องได้ตลอดเวลา',
+        'WORM': 'Malware: ไวรัสกระจายตัวผ่านเครือข่ายอัตโนมัติโดยหาท่อเชื่อมโยง (SMB, RDP)',
+        'BOTNET': 'Network: คอมพิวเตอร์ซอมบี้ ถูกโปรแกรมให้ซิงค์รับคำสั่งจากเซิร์ฟเวอร์เพื่องานมุ่งร้าย',
+        'ADWARE': 'Malware: ฝังโฆษณา แอบโหลดสคริปต์ และเปลี่ยนการตั้งค่าเบราว์เซอร์',
+        'VBE': 'Script: สคริปต์ VBScript ห่อหุ้มที่มักเอาไว้ดาวน์โหลด Ransomware หรือ RAT',
+        'MACRO': 'Document Malware: โค้ดไวรัส VBA ที่ติดมากับไฟลล์อย่างเอกสารแนบ',
+        'OBFUSCATION': 'Evasion: ทำโค้ดให้สับสน อ่านยาก ยืดรหัสป้องกัน EDR ตรวจจับ',
+        'C2': 'Command and Control: หัวใจส่วนเซิร์ฟเวอร์ที่รวบรวมไฟล์ที่แอบขโมยไปและบงการมัลแวร์',
+        'PACKER': 'Evasion: เทคนิคบีบอัดตัวร้ายให้เปลี่ยนจากแฮชเดิม ไม่ซ้ำรหัสเพื่อเลี่ยงของเก่า',
+        'CREDENTIAL': 'Data Theft: เน้นค้นคลังรหัสผ่าน ล็อกอินเบราว์เซอร์ ข้อมูลบัตรเครดิต'
     };
 
     const malwareList = Object.keys(malwareDb);
-    const regex = new RegExp(`\\b(${malwareList.join('|')}|\\w*RAT)\\b`, 'gi');
+    const regex = new RegExp(`\\b(${malwareList.join('|')}|DLL|INJECTION|MALICIOUS|SUSPICIOUS|PHISHING|TROJAN|BACKDOOR|WORM|RANSOMWARE|PY|EXE|BAT|CMD|VBS|PS1|SCR|HTA)\\b`, 'gi');
 
     let foundMalwareSet = new Set();
     let count = 0;
-
-    // -----------------------------------------------------------------
-    // ฟังก์ชันการสแกน (Scanner Logic)
-    // -----------------------------------------------------------------
     function findAndHighlight(root) {
         if (!root) return;
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
@@ -100,7 +116,6 @@
         const intelBtn = document.getElementById('vt-intel-btn');
         if (intelBtn) intelBtn.style.display = 'none';
 
-        // เคลียร์ไฮไลต์เก่าทิ้ง
         document.querySelectorAll('.vt-found').forEach(el => {
             el.style.backgroundColor = '';
             el.style.outline = '';
@@ -108,25 +123,20 @@
             el.classList.remove('vt-found');
         });
 
-        // เริ่มระบายสีไฮไลต์ใหม่
         findAndHighlight(document.body);
 
         if (count > 0 && foundMalwareSet.size > 0) {
             const firstFound = document.querySelector('.vt-found');
             if (firstFound) {
-                // เลื่อนหน้าจอไปหาคำที่เจอแบบ Smooth
                 firstFound.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
 
-            // ⭐ ใช้ setTimeout หน่วงเวลา 300 มิลลิวินาที
-            // เพื่อให้เบราว์เซอร์ Render สีไฮไลต์ลงจอก่อน แล้ว Alert ค่อยเด้ง
             setTimeout(() => {
                 if (intelBtn) intelBtn.style.display = 'flex';
                 alert(`🚨 พบภัยคุกคาม ${count} จุด!\n\nคลิกที่ไอคอน 🛡️ แล้วเลือกเมนู "📋 View Intel Report" เพื่อดูรายละเอียด`);
             }, 300);
 
         } else {
-            // หน่วงเวลาเล็กน้อยเช่นกัน เผื่อการแสดงผล UI
             setTimeout(() => {
                 alert('🔍 สแกนเสร็จสิ้น: ไม่พบมัลแวร์ตามฐานข้อมูลในหน้านี้');
             }, 100);
@@ -150,9 +160,6 @@
         alert(message);
     }
 
-    // -----------------------------------------------------------------
-    // สร้าง UI (Draggable Floating Menu)
-    // -----------------------------------------------------------------
     const initUI = () => {
         const style = document.createElement("style");
         style.innerHTML = `
